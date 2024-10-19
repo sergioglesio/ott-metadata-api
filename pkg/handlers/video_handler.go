@@ -1,30 +1,50 @@
 package handlers
 
 import (
-	"database/sql"
+	"encoding/json"
 	"net/http"
 )
 
-type Handler struct {
-	DB *sql.DB
-}
+func (h *Handler) SearchVideos(w http.ResponseWriter, r *http.Request) {
+	title := r.URL.Query().Get("title")
+	genre := r.URL.Query().Get("genre")
+	year := r.URL.Query().Get("year")
 
-func (h *Handler) GetAllVideos(w http.ResponseWriter, r *http.Request) {
-	// SQL para buscar todos os vídeos
-}
+	var query = "SELECT * FROM videos WHERE 1=1" // Base da query
+	var args []interface{}                       // Argumentos da query
 
-func (h *Handler) GetVideoByID(w http.ResponseWriter, r *http.Request) {
-	// SQL para buscar vídeo por ID
-}
+	if title != "" {
+		query += " AND title LIKE ?"
+		args = append(args, "%"+title+"%")
+	}
 
-func (h *Handler) CreateVideo(w http.ResponseWriter, r *http.Request) {
-	// SQL para inserir novo vídeo
-}
+	if genre != "" {
+		query += " AND genre = ?"
+		args = append(args, genre)
+	}
 
-func (h *Handler) UpdateVideo(w http.ResponseWriter, r *http.Request) {
-	// SQL para atualizar vídeo
-}
+	if year != "" {
+		query += " AND year = ?"
+		args = append(args, year)
+	}
 
-func (h *Handler) DeleteVideo(w http.ResponseWriter, r *http.Request) {
-	// SQL para deletar vídeo
+	rows, err := h.DB.Query(query, args...)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var videos []Video
+	for rows.Next() {
+		var video Video
+		if err := rows.Scan(&video.ID, &video.Title, &video.Description, &video.Cast, &video.Year, &video.Genre); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		videos = append(videos, video)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(videos)
 }

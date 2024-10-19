@@ -1,23 +1,23 @@
-# Use uma imagem base do Go
-FROM golang:1.19
+# Usa uma imagem base do Go com Alpine (leve e eficiente)
+FROM golang:1.22-alpine
 
-# Set the working directory in the container
+# Define o diretório de trabalho dentro do contêiner
 WORKDIR /app
 
-# Copy go.mod and go.sum
-COPY go.mod go.sum ./
+# Copia o arquivo de dependências
+COPY go.mod ./
 
-# Download dependencies
+# Baixa as dependências
 RUN go mod download
 
-# Copy the source code
+# Copia o código fonte para o contêiner
 COPY . .
 
-# Build the Go app
-RUN go build -o main .
+# Compila o binário da aplicação Go
+RUN go build -o /ott-metadata-api
 
-# Expose the port the app runs on
+# Expõe a porta 8080 para comunicação HTTP
 EXPOSE 8080
 
-# Command to run the app
-CMD ["./main"]
+# Comando de execução do contêiner
+CMD [ "/ott-metadata-api" ]
