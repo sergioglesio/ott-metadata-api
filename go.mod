@@ -1,4 +1,4 @@
-module ott-metadata-api
+module github.com/sergioglesio/ott-metadata-api
 
 go 1.22
 

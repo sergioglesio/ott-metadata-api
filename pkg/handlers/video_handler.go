@@ -1,43 +1,30 @@
 package handlers
 
 import (
+	"database/sql" // Para manipulação do banco de dados
 	"encoding/json"
 	"net/http"
+
+	"github.com/sergioglesio/ott-metadata-api/pkg/models" // Certifique-se de importar o modelo
 )
 
-func (h *Handler) SearchVideos(w http.ResponseWriter, r *http.Request) {
-	title := r.URL.Query().Get("title")
-	genre := r.URL.Query().Get("genre")
-	year := r.URL.Query().Get("year")
+// Estrutura Handler
+type Handler struct {
+	DB *sql.DB
+}
 
-	var query = "SELECT * FROM videos WHERE 1=1" // Base da query
-	var args []interface{}                       // Argumentos da query
-
-	if title != "" {
-		query += " AND title LIKE ?"
-		args = append(args, "%"+title+"%")
-	}
-
-	if genre != "" {
-		query += " AND genre = ?"
-		args = append(args, genre)
-	}
-
-	if year != "" {
-		query += " AND year = ?"
-		args = append(args, year)
-	}
-
-	rows, err := h.DB.Query(query, args...)
+// Método para obter todos os vídeos
+func (h *Handler) GetAllVideos(w http.ResponseWriter, r *http.Request) {
+	rows, err := h.DB.Query("SELECT * FROM videos")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
 
-	var videos []Video
+	var videos []models.Video
 	for rows.Next() {
-		var video Video
+		var video models.Video
 		if err := rows.Scan(&video.ID, &video.Title, &video.Description, &video.Cast, &video.Year, &video.Genre); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -47,4 +34,24 @@ func (h *Handler) SearchVideos(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(videos)
+}
+
+// Método para criar um vídeo
+func (h *Handler) CreateVideo(w http.ResponseWriter, r *http.Request) {
+	var video models.Video
+	if err := json.NewDecoder(r.Body).Decode(&video); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Insira o vídeo no banco de dados (certifique-se de que sua tabela está configurada corretamente)
+	_, err := h.DB.Exec("INSERT INTO videos (title, description, cast, year, genre) VALUES (?, ?, ?, ?, ?)",
+		video.Title, video.Description, video.Cast, video.Year, video.Genre)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(video)
 }

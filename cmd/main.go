@@ -3,8 +3,9 @@ package main
 import (
 	"log"
 	"net/http"
-	"ott-metadata-api/config"
-	"ott-metadata-api/pkg/handlers"
+
+	config "github.com/sergioglesio/ott-metadata-api/configs"
+	"github.com/sergioglesio/ott-metadata-api/pkg/handlers"
 )
 
 func main() {
@@ -20,8 +21,7 @@ func main() {
 	// Registrando rotas
 	http.HandleFunc("/videos", handler.GetAllVideos)
 	http.HandleFunc("/video", handler.CreateVideo)
-	http.HandleFunc("/video/search", handler.SearchVideos)
-	http.HandleFunc("/tmdb", handlers.FetchMovieDataFromTMDb)
+	// Adicione outras rotas conforme necessário
 
 	// Iniciando o servidor
 	log.Println("Servidor rodando na porta 8080")
